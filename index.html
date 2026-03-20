@@ -2,16 +2,75 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>RaaS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RaaS - Firebase Manager</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #F4F7F6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button#mainBtn { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; }
-        .post { background: #FFF; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 10px; width: 100%; max-width: 500px; position: relative; }
-        .like-btn { cursor: pointer; border: none; background: #E8F5E9; padding: 5px 12px; border-radius: 20px; font-size: 14px; transition: 0.2s; }
-        .like-btn:hover { background: #C8E6C9; }
-        .time { font-size: 11px; color: #999; float: right; }
+        /* Стили из первого скриншота */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #F4F7F6; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+        }
+        .container { 
+            width: 100%; 
+            max-width: 500px; 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+        }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+        }
+        button#mainBtn { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 6px; 
+            width: 100%; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        button#mainBtn:disabled {
+            background: #ccc;
+        }
+        .post { 
+            background: #FFF; 
+            border: 1px solid #eaeaea; 
+            padding: 15px; 
+            margin-top: 15px; 
+            border-radius: 10px; 
+            width: 100%; 
+            max-width: 500px; 
+            position: relative; 
+        }
+        .like-btn { 
+            cursor: pointer; 
+            border: none; 
+            background: #E8F5E9; 
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            font-size: 14px; 
+            transition: 0.2s; 
+        }
+        .like-btn:hover { 
+            background: #C8E6C9; 
+        }
+        .time { 
+            font-size: 11px; 
+            color: #999; 
+            float: right; 
+        }
     </style>
 </head>
 <body>
@@ -26,23 +85,25 @@
 <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
 <script type="module">
+    // Импорт Firebase SDK
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import {
         getFirestore, collection, addDoc, query, orderBy, onSnapshot,
         serverTimestamp, updateDoc, doc, increment
     } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-    // КОНФИГУРАЦИЯ
+    // Конфигурация вашего проекта
     const firebaseConfig = {
         apiKey: "AIzaSyBD8ksqaZhKvx5X5yg7uNbuCmwkM9i1vug",
-        authDomain: "registerasddwqwqrf.firebaseapp.com",
-        projectId: "registerasddwqwqrf",
-        storageBucket: "registerasddwqwqrf.firebasestorage.app",
-        messagingSenderId: "96075486903",
-        appId: "1:96075486903:web:e15506574d299351f19f32",
-        measurementId: "G-L1ESE7TD5D"
+  authDomain: "registerasddwqwqrf.firebaseapp.com",
+  projectId: "registerasddwqwqrf",
+  storageBucket: "registerasddwqwqrf.firebasestorage.app",
+  messagingSenderId: "96075486903",
+  appId: "1:96075486903:web:e15506574d299351f19f32",
+  measurementId: "G-L1ESE7TD5D"
     };
 
+    // Инициализация
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -51,13 +112,56 @@
         const docRef = doc(db, "requests", id);
         try {
             await updateDoc(docRef, { likes: increment(1) });
-        } catch (e) {
-            console.error("Ошибка обновления:", e);
+        } catch (e) { 
+            console.error("Validation Error:", e.message); 
         }
     };
 
-    // Далее в файле обычно идет логика обработки нажатия на mainBtn 
-    // и подписка на обновления коллекции (onSnapshot) для вывода в #feed.
+    // МЕТОД: ЗАПИСЬ С ВАЛИДАЦИЕЙ
+    document.getElementById('mainBtn').onclick = async () => {
+        const btn = document.getElementById('mainBtn');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+
+        btn.disabled = true;
+        try {
+            await addDoc(collection(db, "requests"), {
+                name: nameInput.value,
+                email: emailInput.value,
+                likes: 0,
+                timestamp: serverTimestamp()
+            });
+            // Очистка полей после успеха
+            emailInput.value = "";
+            nameInput.value = ""; 
+        } catch (e) { 
+            alert("Ошибка безопасности: Данные отклонены сервером."); 
+            console.error(e);
+        }
+        btn.disabled = false;
+    };
+
+    // МЕТОД: REAL-TIME СИНХРОНИЗАЦИЯ (ОТОБРАЖЕНИЕ)
+    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const feed = document.getElementById('feed');
+        feed.innerHTML = ""; // Очищаем перед обновлением
+        
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            // Формируем HTML для каждого поста
+            feed.innerHTML += `
+                <div class="post">
+                    <span class="time">${data.timestamp?.toDate().toLocaleTimeString() || "..."}</span>
+                    <b>${data.name || "Без имени"}</b>
+                    <p style="margin: 5px 0;">${data.email || "Нет email"}</p>
+                    <button class="like-btn" onclick="processLike('${doc.id}')">
+                        👍 ${data.likes || 0}
+                    </button>
+                </div>
+            `;
+        });
+    });
 </script>
 
 </body>
